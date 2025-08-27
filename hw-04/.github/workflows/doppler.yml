@@ -1,15 +1,38 @@
-name: Test Doppler Secrets
+name: Doppler Secrets Workflow
+
 on:
-  workflow_dispatch: # lo puedes lanzar manualmente desde GitHub Actions
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  check-secrets:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
 
-      - name: Mostrar secretos disponibles (no sensibles)
+    steps:
+      # 1️⃣ Clonar tu repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Instalar Doppler CLI
+      - name: Install Doppler CLI
         run: |
-          echo "AWS Region: ${{ secrets.AWS_REGION }}"
-          echo "Bucket: ${{ secrets.S3_BUCKET }}"
+          curl -Ls https://cli.doppler.com/install.sh | sh
+
+      # 3️⃣ Login Doppler con tu token (guardar como secret en GitHub)
+      - name: Setup Doppler
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: doppler login --token $DOPPLER_TOKEN
+
+      # 4️⃣ Inyectar secretos en el entorno
+      - name: Pull Doppler secrets
+        run: doppler run -- echo "Secrets ready!"
+
+      # 5️⃣ Instalar dependencias y construir proyecto
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
